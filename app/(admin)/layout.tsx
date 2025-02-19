@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import "./globals.css";
-import { CookiesProvider } from "next-client-cookies/server";
+import MainLayout from "@/components/Layouts/MainLayout";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -13,10 +12,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>
-        <CookiesProvider>{children}</CookiesProvider>
-      </body>
-    </html>
+    // <html lang="en">
+    //   <body>
+    <MainLayout>{children}</MainLayout>
+    // </body>
+    // </html>
   );
 }
