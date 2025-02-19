@@ -1,6 +1,5 @@
 "use client";
 import LoadingSpinner from "@/components/LoadingSpinner/LoadingSpinner";
-import { users } from "@/data/user";
 import axios from "axios";
 import { useCookies } from "next-client-cookies";
 import Image from "next/image";
@@ -16,7 +15,8 @@ import {
 import { MdEmail } from "react-icons/md";
 
 const UserDetailPage = () => {
-  const { id } = useParams(); // Get user ID from URL
+  const { id } = useParams();
+  console.log(`UserDetailPage`, id);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -53,7 +53,7 @@ const UserDetailPage = () => {
     }
   }, [id, Cookies]);
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) return <LoadingSpinner message="Loading users..." />;
   if (error) return <p className="text-red-500">{error}</p>;
   if (!user) return <p className="text-center text-red-500">User not found!</p>;
 

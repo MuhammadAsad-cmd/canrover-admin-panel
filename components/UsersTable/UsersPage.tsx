@@ -49,8 +49,14 @@ const UsersPage: React.FC = () => {
     currentPage * usersPerPage
   );
 
-  if (loading) return <LoadingSpinner />;
-  if (error) return <p className="text-red-500">{error}</p>;
+  if (loading) return <LoadingSpinner message="Loading users..." />;
+  if (error)
+    return (
+      <div className="flex items-center justify-center h-screen">
+        {" "}
+        <p className="text-red-500">{error}</p>{" "}
+      </div>
+    );
 
   return (
     <div className="p-6">
