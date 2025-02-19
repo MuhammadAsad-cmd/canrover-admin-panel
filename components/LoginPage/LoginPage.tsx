@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { IoMdLogIn } from "react-icons/io";
 import axios from "axios";
 import { useCookies } from "next-client-cookies";
+import Image from "next/image";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -48,8 +49,10 @@ const LoginPage = () => {
         <div className="bg-base-bg rounded-2xl shadow-lg p-8 border border-border-default">
           {/* Logo Section */}
           <div className="flex justify-center mb-8">
-            <img
-              src="/placeholder.svg"
+            <Image
+              width={140}
+              height={80}
+              src="/images/images.png"
               alt="Logo"
               className="h-12 w-auto transform transition-transform hover:scale-105"
             />

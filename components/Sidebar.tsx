@@ -5,10 +5,13 @@ import SideLink from "./SideLink";
 import { RootState } from "@/redux/store";
 import { closeSidebar } from "@/redux/Slices/sidebarSlice";
 import { useRouter } from "next/navigation";
+import { useCookies } from "next-client-cookies";
 
 const Sidebar: React.FC = () => {
   const isOpen = useSelector((state: RootState) => state.sidebar.isOpen);
   const dispatch = useDispatch();
+  const Cookies = useCookies();
+  const router = useRouter();
 
   const links = [
     { name: "Users", href: "/" },
@@ -16,12 +19,11 @@ const Sidebar: React.FC = () => {
     { name: "Scooties", href: "/scooties" },
   ];
 
-  // const router = useRouter();
-
-  // const handleLogout = () => {
-  //   adminLogout();
-  //   router.push("/auth/login");
-  // };
+  const handleLogout = () => {
+    Cookies.remove("token"); // Remove the token from cookies
+    dispatch(closeSidebar()); // Close the sidebar
+    router.push("/login"); // Redirect to login page
+  };
 
   return (
     <>
@@ -45,12 +47,12 @@ const Sidebar: React.FC = () => {
                 onClick={() => dispatch(closeSidebar())}
               />
             ))}
-            {/* <button
+            <button
               onClick={handleLogout}
               className="mt-6 px-4 py-2 bg-red-600 text-white w-full rounded"
             >
               Logout
-            </button> */}
+            </button>
           </nav>
         </div>
       </div>
