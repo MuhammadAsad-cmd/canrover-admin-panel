@@ -20,9 +20,9 @@ const Sidebar: React.FC = () => {
   ];
 
   const handleLogout = () => {
-    Cookies.remove("token"); // Remove the token from cookies
-    dispatch(closeSidebar()); // Close the sidebar
-    router.push("/login"); // Redirect to login page
+    Cookies.remove("token");
+    dispatch(closeSidebar());
+    router.push("/login");
   };
 
   return (

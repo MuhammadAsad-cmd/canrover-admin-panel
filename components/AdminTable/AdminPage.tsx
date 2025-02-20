@@ -3,48 +3,32 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Pagination from "../Ui/Pagination";
 import AdminRows from "./AdminRows";
-import { useCookies } from "next-client-cookies";
-import axios from "axios";
+import api from "@/utils/api";
 import LoadingSpinner from "../LoadingSpinner/LoadingSpinner";
 
 const AdminsPage: React.FC = () => {
   const adminsPerPage = 10;
   const [admins, setAdmins] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = Math.ceil(admins.length / adminsPerPage);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const Cookies = useCookies();
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      const token = Cookies.get("token"); // Retrieve token from cookies
-
-      if (!token) {
-        setError("Unauthorized: No token found");
-        setLoading(false);
-        return;
-      }
-
+    const fetchAdmins = async () => {
       try {
-        const response = await axios.get(`/api/user/fetch`, {
-          headers: {
-            Authorization: `Bearer ${token}`, // Include token in the request
-          },
-          withCredentials: true, // Ensure cookies are sent with the request
-        });
+        const response = await api.get(`/admin/fetch`);
         setAdmins(response.data.data);
       } catch (err) {
-        setError("Failed to fetch users");
+        setError("Failed to fetch admins");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUsers();
-  }, []);
+    fetchAdmins();
+  }, [currentPage]);
 
+  const totalPages = Math.ceil(admins.length / adminsPerPage);
   const displayedAdmins = admins.slice(
     (currentPage - 1) * adminsPerPage,
     currentPage * adminsPerPage
@@ -54,8 +38,7 @@ const AdminsPage: React.FC = () => {
   if (error)
     return (
       <div className="flex items-center justify-center h-screen">
-        {" "}
-        <p className="text-red-500">{error}</p>{" "}
+        <p className="text-red-500">{error}</p>
       </div>
     );
 

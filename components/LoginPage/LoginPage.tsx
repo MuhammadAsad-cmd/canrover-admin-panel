@@ -1,45 +1,78 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { IoMdLogIn } from "react-icons/io";
-import axios from "axios";
+import api from "@/utils/api";
 import { useCookies } from "next-client-cookies";
 import Image from "next/image";
 
-const LoginPage = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const router = useRouter();
-  const Cookies = useCookies();
+// Define the expected structure of API response
+interface Admin {
+  email: string;
+  name?: string;
+}
 
-  const handleLogin = async (e: React.FormEvent) => {
+interface LoginResponse {
+  token: string;
+  admin: Admin;
+}
+
+const LoginPage: React.FC = () => {
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const router = useRouter();
+  const cookies = useCookies();
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/admin/login`,
-        { email, password },
-        { headers: { "Content-Type": "application/json" } }
-      );
+      const response = await api.post<LoginResponse>("/admin/login", {
+        email,
+        password,
+      });
 
-      // console.log("Login Success:", response.data);
+      if (response?.data?.token) {
+        // ✅ Store token without expiration
+        cookies.set("token", response.data.token, { path: "/" });
 
-      if (response.data.token) {
-        Cookies.set("token", response.data.token, { expires: 7 });
-        // console.log("Stored Token:", Cookies.get("token"));
+        // ✅ Store admin info (non-sensitive data)
+        cookies.set("adminInfo", JSON.stringify(response.data.admin), {
+          path: "/",
+        });
 
-        setTimeout(() => {
-          router.push("/");
-          router.refresh();
-        }, 100);
+        // ✅ Redirect to dashboard
+        router.push("/");
+        router.refresh();
       } else {
-        setError("Invalid login credentials");
+        throw new Error("Invalid login credentials");
       }
     } catch (error: any) {
-      console.error("Login Error:", error.response?.data || error.message);
-      setError(error.response?.data?.message || "Something went wrong!");
+      if (error.response) {
+        const status = error.response.status;
+        if (status === 401) {
+          setError("Incorrect email or password. Please try again.");
+        } else if (status === 500) {
+          setError("Server error. Please try again later.");
+        } else {
+          setError(
+            error.response.data?.message || "Login failed. Please try again."
+          );
+        }
+      } else if (error.request) {
+        setError(
+          "No response from the server. Please check your internet connection."
+        );
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -47,7 +80,6 @@ const LoginPage = () => {
     <div className="min-h-screen bg-sidebar-bg flex items-center justify-center p-6">
       <div className="w-full max-w-md animate-fadeIn">
         <div className="bg-base-bg rounded-2xl shadow-lg p-8 border border-border-default">
-          {/* Logo Section */}
           <div className="flex justify-center mb-8">
             <Image
               width={140}
@@ -57,16 +89,14 @@ const LoginPage = () => {
               className="h-12 w-auto transform transition-transform hover:scale-105"
             />
           </div>
-          {/* Title */}
           <div className="text-center mb-8">
             <h1 className="text-2xl font-semibold text-heading">
               Welcome Back
             </h1>
             <p className="text-paragraph mt-2">Please sign in to continue</p>
           </div>
-          {/* Login Form */}
           <form onSubmit={handleLogin} className="space-y-6">
-            {error && <p className="text-red-500">{error}</p>}
+            {error && <p className="text-red-500 text-center">{error}</p>}
             <div className="space-y-2">
               <label
                 htmlFor="email"
@@ -112,12 +142,18 @@ const LoginPage = () => {
               className="w-full bg-primary hover:bg-primary-hover text-white font-medium py-3 px-4 
                         rounded-lg flex items-center justify-center gap-2 transform transition-all 
                         duration-200 hover:shadow-lg active:scale-[0.98]"
+              disabled={loading}
             >
-              <IoMdLogIn />
-              Sign In
+              {loading ? (
+                <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
+              ) : (
+                <>
+                  <IoMdLogIn />
+                  Sign In
+                </>
+              )}
             </button>
           </form>
-          {/* Additional Links */}
           <div className="mt-6 text-center">
             <a
               href="#"
@@ -131,4 +167,5 @@ const LoginPage = () => {
     </div>
   );
 };
+
 export default LoginPage;

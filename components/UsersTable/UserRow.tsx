@@ -7,7 +7,6 @@ const UserRow = ({ user }: { user: any }) => {
 
   return (
     <tr className="border-b border-border-default hover:bg-table-row-hover transition-colors">
-      {/* User Image */}
       <td className="px-4 py-3">
         <div className="flex w-10 h-10 border-2 rounded-full border-primary-light items-center overflow-hidden">
           <Image
@@ -20,29 +19,23 @@ const UserRow = ({ user }: { user: any }) => {
         </div>
       </td>
 
-      {/* User Name */}
       <td className="px-4 py-3 text-paragraph font-medium">
         {user?.name || "Unknown"}
       </td>
 
-      {/* User Email */}
       <td className="px-4 py-3 text-paragraph">{user?.email || "No Email"}</td>
 
-      {/* User Phone */}
       <td className="px-4 py-3 text-paragraph">
         {user?.phone ? user.phone : "N/A"}
       </td>
 
-      {/* User Account Type */}
       <td className="px-4 py-3 text-paragraph">
         {user?.accountType ? user.accountType : "N/A"}
       </td>
 
-      {/* View Profile Button */}
-      <td className="px-4 py-3 text-center">
+      <td className="px-4 py-3">
         <Link
-          // href={`/users/${user?._id || "#"}`}
-          href="/"
+          href={`/users/${user?._id || "#"}`}
           className="inline-flex items-center justify-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-hover transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
         >
           View
