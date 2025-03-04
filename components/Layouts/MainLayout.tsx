@@ -36,10 +36,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
     <Provider store={store}>
       <Navbar admin={admin} />
       <div className="flex w-full min-h-screen">
-        <div className="md:w-1/5">
-          <Sidebar />
+        <div className="md:w-[320px]">
+          <Sidebar admin={admin} />
         </div>
-        <main className="w-full md:w-4/5">{children}</main>
+        <main className="w-full">{children}</main>
       </div>
     </Provider>
   );
