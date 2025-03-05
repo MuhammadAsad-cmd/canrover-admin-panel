@@ -26,7 +26,7 @@ const Sidebar: React.FC<NavbarProps> = ({ admin }) => {
     { name: "Dashboard", href: "/", icon: <RxDashboard /> },
     { name: "Users", href: "/users", icon: <FaUsers /> },
     { name: "Admins", href: "/admins", icon: <MdOutlineAdminPanelSettings /> },
-    { name: "Scooties", href: "/scooties", icon: <BsScooter /> },
+    { name: "Scooters", href: "/scooters", icon: <BsScooter /> },
   ];
 
   const handleLogout = () => {

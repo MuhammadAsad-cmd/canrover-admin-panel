@@ -16,7 +16,7 @@ const AdminsPage: React.FC = () => {
   useEffect(() => {
     const fetchAdmins = async () => {
       try {
-        const response = await api.get(`/admin/fetch`);
+        const response = await api.get(`/api/admin/fetch`);
         setAdmins(response.data.data);
       } catch (err) {
         setError("Failed to fetch admins");
@@ -59,7 +59,7 @@ const AdminsPage: React.FC = () => {
             <tr>
               <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Email</th>
-              <th className="px-4 py-2">Actions</th>
+              {/* <th className="px-4 py-2">Actions</th> */}
             </tr>
           </thead>
           <tbody>

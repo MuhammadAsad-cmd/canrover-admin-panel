@@ -21,7 +21,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   useEffect(() => {
     const fetchAdminProfile = async () => {
       try {
-        const res = await api.get(`/admin/profile`);
+        const res = await api.get(`/api/admin/profile`);
         setAdmin(res.data.data);
       } catch (error) {
         console.error("Error fetching admin profile:", error);

@@ -26,7 +26,7 @@ const UserDetailPage: React.FC = () => {
     const fetchUser = async () => {
       try {
         // const response = await api.get(`/user/fetch`);
-        const response = await api.get(`/user/fetch`, { params: { id } });
+        const response = await api.get(`/api/user/fetch`, { params: { id } });
 
         if (response.data?.data?.length > 0) {
           setUser(response.data.data[0]); // Extract first user object

@@ -20,7 +20,7 @@ const AdminDetailPage: React.FC = () => {
   useEffect(() => {
     const fetchAdmin = async () => {
       try {
-        const response = await api.get(`/admin/fetch`, { params: { id } });
+        const response = await api.get(`/api/admin/fetch`, { params: { id } });
 
         if (response.data?.data?.length > 0) {
           setAdmin(response.data.data[0]); // Extract the first admin object

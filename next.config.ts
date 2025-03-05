@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*", // Redirect API requests
-        destination: "https://canrover-server.vercel.app/api/:path*", // Actual API endpoint
+        destination: "http://18.119.37.162:8080/api/:path*", // Actual API endpoint
       },
     ];
   },

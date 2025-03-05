@@ -1,12 +1,22 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { IoMdLogIn } from "react-icons/io";
 import api from "@/utils/api";
 import { useCookies } from "next-client-cookies";
 import Image from "next/image";
 
-// Define the expected structure of API response
+// Zod validation schema
+const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+
 interface Admin {
   email: string;
   name?: string;
@@ -18,63 +28,75 @@ interface LoginResponse {
 }
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [error, setError] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
-
   const router = useRouter();
   const cookies = useCookies();
+  const [error, setError] = React.useState<string>("");
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const onSubmit = async (data: LoginFormValues) => {
     setError("");
-    setLoading(true);
 
     try {
-      const response = await api.post<LoginResponse>("/admin/login", {
-        email,
-        password,
-      });
+      const response = await api.post<LoginResponse>("/api/admin/login", data);
 
       if (response?.data?.token) {
-        // ✅ Store token without expiration
         cookies.set("token", response.data.token, { path: "/" });
-
-        // ✅ Store admin info (non-sensitive data)
         cookies.set("adminInfo", JSON.stringify(response.data.admin), {
           path: "/",
         });
-
-        // ✅ Redirect to dashboard
         router.push("/");
         router.refresh();
-      } else {
-        throw new Error("Invalid login credentials");
       }
     } catch (error: any) {
+      let errorMessage = "Login failed. Please try again.";
+
       if (error.response) {
-        const status = error.response.status;
-        if (status === 401) {
-          setError("Incorrect email or password. Please try again.");
-        } else if (status === 500) {
-          setError("Server error. Please try again later.");
-        } else {
-          setError(
-            error.response.data?.message || "Login failed. Please try again."
-          );
-        }
+        // Server responded with a status code outside 2xx
+        errorMessage = error.response.data?.message || errorMessage;
       } else if (error.request) {
-        setError(
-          "No response from the server. Please check your internet connection."
-        );
+        // Request was made but no response received
+        errorMessage =
+          "No response from the server. Please check your connection.";
       } else {
-        setError("Something went wrong. Please try again.");
+        // Something else went wrong
+        errorMessage = error.message || errorMessage;
       }
-    } finally {
-      setLoading(false);
+
+      setError(errorMessage);
     }
   };
+
+  // const onSubmit = async (data: LoginFormValues) => {
+  //   setError("");
+
+  //   try {
+  //     const response = await api.post<LoginResponse>("/api/admin/login", data);
+
+  //     if (response?.data?.token) {
+  //       cookies.set("token", response.data.token, { path: "/" });
+  //       cookies.set("adminInfo", JSON.stringify(response.data.admin), {
+  //         path: "/",
+  //       });
+  //       router.push("/");
+  //       router.refresh();
+  //     }
+  //   } catch (error: any) {
+  //     const errorMessage =
+  //       error.response?.data?.message || "Login failed. Please try again.";
+  //     setError(errorMessage);
+  //   }
+  // };
 
   return (
     <div className="min-h-screen bg-sidebar-bg flex items-center justify-center p-6">
@@ -95,28 +117,34 @@ const LoginPage: React.FC = () => {
             </h1>
             <p className="text-paragraph mt-2">Please sign in to continue</p>
           </div>
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {error && <p className="text-red-500 text-center">{error}</p>}
+
             <div className="space-y-2">
               <label
                 htmlFor="email"
                 className="block text-sm font-medium text-heading"
               >
-                Email or Username
+                Email
               </label>
               <input
+                {...register("email")}
                 id="email"
-                type="text"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="email"
                 className="w-full px-4 py-3 rounded-lg border border-border-default bg-base-bg 
                           text-heading placeholder-paragraph/60 
                           focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
                           transition-colors duration-200"
-                placeholder="Enter your email or username"
-                required
+                placeholder="Enter your email"
+                disabled={isSubmitting}
               />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
+
             <div className="space-y-2">
               <label
                 htmlFor="password"
@@ -125,26 +153,31 @@ const LoginPage: React.FC = () => {
                 Password
               </label>
               <input
+                {...register("password")}
                 id="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-border-default bg-base-bg 
                           text-heading placeholder-paragraph/60 
                           focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
                           transition-colors duration-200"
                 placeholder="Enter your password"
-                required
+                disabled={isSubmitting}
               />
+              {errors.password && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
+
             <button
               type="submit"
               className="w-full bg-primary hover:bg-primary-hover text-white font-medium py-3 px-4 
                         rounded-lg flex items-center justify-center gap-2 transform transition-all 
-                        duration-200 hover:shadow-lg active:scale-[0.98]"
-              disabled={loading}
+                        duration-200 hover:shadow-lg active:scale-[0.98] disabled:opacity-70"
+              disabled={isSubmitting}
             >
-              {loading ? (
+              {isSubmitting ? (
                 <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
               ) : (
                 <>
@@ -154,14 +187,6 @@ const LoginPage: React.FC = () => {
               )}
             </button>
           </form>
-          <div className="mt-6 text-center">
-            <a
-              href="#"
-              className="text-paragraph hover:text-primary transition-colors duration-200"
-            >
-              Forgot your password?
-            </a>
-          </div>
         </div>
       </div>
     </div>

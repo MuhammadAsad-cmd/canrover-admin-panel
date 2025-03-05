@@ -27,7 +27,7 @@ const UserForm = () => {
     setError("");
 
     try {
-      await api.post("/admin/register", formData);
+      await api.post("/api/admin/register", formData);
       router.push("/admins"); // Redirect back to the admin list
     } catch (err) {
       setError("Failed to create admin. Please try again.");

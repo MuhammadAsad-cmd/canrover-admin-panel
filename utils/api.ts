@@ -1,8 +1,11 @@
 import axios from "axios";
 
+// Set the base URL using the environment variable
+const baseURL = process.env.NEXT_PUBLIC_BASE_URL || "/";
+
 const api = axios.create({
-  baseURL: "/api", // Set base URL
-  withCredentials: true, // Send cookies with requests
+  // baseURL, 
+  withCredentials: true,
 });
 
 // Function to get token from cookies manually
@@ -28,4 +31,3 @@ api.interceptors.request.use(
 );
 
 export default api;
-
