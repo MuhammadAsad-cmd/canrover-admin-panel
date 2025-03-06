@@ -22,7 +22,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ center, path }) => {
 
   return (
     <APIProvider
-      apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string}
+      apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_ID as string}
       onLoad={() => setMapLoaded(true)}
       onError={() => setLoadError(true)}
     >
@@ -30,7 +30,7 @@ const MapComponent: React.FC<MapComponentProps> = ({ center, path }) => {
         <Map
           defaultCenter={center}
           defaultZoom={15}
-          mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID}
+          mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_ID}
         >
           {mapLoaded && (
             <Marker
