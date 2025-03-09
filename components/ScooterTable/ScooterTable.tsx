@@ -5,6 +5,7 @@ import api from "@/utils/api";
 import Pagination from "../Ui/Pagination";
 import ScootiesRows from "./ScootiesRows";
 import MapComponent from "../MapComponent/MapComponent";
+import LoadingSpinner from "../LoadingSpinner/LoadingSpinner";
 
 interface ScooterData {
   _id: string;
@@ -18,36 +19,31 @@ interface ScooterData {
   updatedAt: string;
   name?: string;
   model?: string;
-  online?: "Online" | "Offline"; // Corrected status type
+  online?: "Online" | "Offline";
 }
 
 const ScooterTable: React.FC = () => {
-  const scootiessPerPage = 15;
-  const params = useParams();
-  const imei = params.imei as string;
+  const scootersPerPage = 15;
+  const { imei } = useParams() as { imei: string };
 
-  const [scooty, setScooty] = useState<ScooterData[]>([]);
+  const [scooters, setScooters] = useState<ScooterData[]>([]);
   const [scooterDetails, setScooterDetails] = useState<ScooterData | null>(
     null
   );
-
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>("");
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [showMap, setShowMap] = useState<boolean>(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showMap, setShowMap] = useState(false);
 
   useEffect(() => {
-    const fetchHeaderData = async (): Promise<void> => {
+    const fetchHeaderData = async () => {
       try {
         const response = await api.get<{ data: any }>("/api/scooter/fetch", {
           params: { imei },
         });
-
-        if (response.data && response.data.data) {
-          // Access the first element of the data array
-          const scooter = response.data.data[0]; // [!code ++]
-
-          // Convert API response to match ScooterData interface
+        const headerData = response.data?.data;
+        if (headerData && headerData.length > 0) {
+          const scooter = headerData[0];
           const formattedScooter: ScooterData = {
             _id: scooter._id,
             imei: scooter.imei,
@@ -60,15 +56,13 @@ const ScooterTable: React.FC = () => {
             updatedAt: scooter.updatedAt,
             name: scooter.name || "N/A",
             model: scooter.model || "N/A",
-            online: scooter.online ? "Online" : "Offline", // Correct status conversion
+            online: scooter.online ? "Online" : "Offline",
           };
-
           setScooterDetails(formattedScooter);
-          // In your ScooterTable component
           console.log(
             "Map coordinates:",
-            scooterDetails?.latitude,
-            scooterDetails?.longitude
+            formattedScooter.latitude,
+            formattedScooter.longitude
           );
         } else {
           setError("No header data available.");
@@ -79,15 +73,13 @@ const ScooterTable: React.FC = () => {
       }
     };
 
-    const fetchTableData = async (): Promise<void> => {
+    const fetchTableData = async () => {
       try {
         const response = await api.get<{ data: ScooterData[] }>(
           "/api/scooter/data",
-          {
-            params: { imei },
-          }
+          { params: { imei } }
         );
-        setScooty(response.data.data);
+        setScooters(response.data.data);
       } catch (err) {
         console.error(err);
         setError("Failed to fetch scooter table details.");
@@ -99,13 +91,14 @@ const ScooterTable: React.FC = () => {
     );
   }, [imei]);
 
-  const totalPages: number = Math.ceil(scooty.length / scootiessPerPage);
-  const displayedScooties: ScooterData[] = scooty.slice(
-    (currentPage - 1) * scootiessPerPage,
-    currentPage * scootiessPerPage
+  // Calculate pagination data
+  const totalPages = Math.ceil(scooters.length / scootersPerPage);
+  const displayedScooters = scooters.slice(
+    (currentPage - 1) * scootersPerPage,
+    currentPage * scootersPerPage
   );
 
-  const handleViewLocation = (): void => {
+  const handleViewLocation = () => {
     if (
       scooterDetails &&
       scooterDetails.latitude !== 0 &&
@@ -116,21 +109,21 @@ const ScooterTable: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading scooter details...</div>;
+    return <LoadingSpinner message="Loading scooter details..." />;
   }
 
   if (error) {
     return <div className="text-center py-8 text-red-500">{error}</div>;
   }
 
-  if (!scooty || scooty.length === 0) {
+  if (scooters.length === 0) {
     return <div className="text-center py-8">No data found.</div>;
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header Section */}
-      <div className="bg-base-bg rounded-lg shadow-lg p-6 mb-6">
+      <section className="bg-base-bg rounded-lg shadow-lg p-6 mb-6">
         <h2 className="text-2xl font-semibold mb-4 text-heading">
           Scooter Details for IMEI: {imei}
         </h2>
@@ -158,7 +151,9 @@ const ScooterTable: React.FC = () => {
           <div>
             <p className="text-sm text-gray-600">Location</p>
             <p className="font-medium text-heading">
-              {scooterDetails?.latitude && scooterDetails?.longitude
+              {scooterDetails &&
+              scooterDetails.latitude &&
+              scooterDetails.longitude
                 ? `${scooterDetails.latitude.toFixed(
                     4
                   )}, ${scooterDetails.longitude.toFixed(4)}`
@@ -177,10 +172,11 @@ const ScooterTable: React.FC = () => {
         >
           View Location on Map
         </button>
-      </div>
+      </section>
 
+      {/* Map Section */}
       {showMap && scooterDetails && (
-        <div className="mb-6 flex justify-center">
+        <section className="mb-6 flex justify-center">
           {scooterDetails.latitude && scooterDetails.longitude ? (
             <MapComponent
               center={{
@@ -192,11 +188,11 @@ const ScooterTable: React.FC = () => {
           ) : (
             <div className="text-red-500">Invalid coordinates</div>
           )}
-        </div>
+        </section>
       )}
 
       {/* Table Section */}
-      <div className="overflow-x-auto">
+      <section className="overflow-x-auto">
         <table className="w-full bg-white shadow-md rounded-lg">
           <thead className="bg-table-header-bg text-left text-heading">
             <tr>
@@ -205,17 +201,16 @@ const ScooterTable: React.FC = () => {
               <th className="px-4 py-2">IMEI</th>
               <th className="px-4 py-2">Longitude</th>
               <th className="px-4 py-2">Latitude</th>
-              {/* <th className="px-4 py-2">Raw Data</th> */}
               <th className="px-4 py-2">Created At</th>
             </tr>
           </thead>
           <tbody>
-            {displayedScooties.map((data) => (
-              <ScootiesRows key={data._id} data={data} />
+            {displayedScooters.map((scooter) => (
+              <ScootiesRows key={scooter._id} data={scooter} />
             ))}
           </tbody>
         </table>
-      </div>
+      </section>
 
       {/* Pagination */}
       <Pagination

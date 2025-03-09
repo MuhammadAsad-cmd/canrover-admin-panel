@@ -99,16 +99,16 @@ const LoginPage: React.FC = () => {
   // };
 
   return (
-    <div className="min-h-screen bg-sidebar-bg flex items-center justify-center p-6">
+    <div className="min-h-screen bg-sidebar-bg flex items-center justify-center">
       <div className="w-full max-w-md animate-fadeIn">
-        <div className="bg-base-bg rounded-2xl shadow-lg p-8 border border-border-default">
-          <div className="flex justify-center mb-8">
+        <div className="bg-base-bg rounded-2xl shadow-lg pb-6 px-6 border border-border-default">
+          <div className="flex justify-center items-center w-full mx-auto max-w-[200px] mb-2">
             <Image
               width={140}
               height={80}
-              src="/images/images.png"
+              src="/images/logo.png"
               alt="Logo"
-              className="h-12 w-auto transform transition-transform hover:scale-105"
+              className="h-full w-full mx-auto transform transition-transform hover:scale-105"
             />
           </div>
           <div className="text-center mb-8">
