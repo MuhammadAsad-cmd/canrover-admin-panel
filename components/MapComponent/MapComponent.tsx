@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { APIProvider, Map, Marker } from "@vis.gl/react-google-maps";
 
 interface MapComponentProps {
@@ -9,43 +9,40 @@ interface MapComponentProps {
 
 const MapComponent: React.FC<MapComponentProps> = ({ center, path }) => {
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [googleAvailable, setGoogleAvailable] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (window.google && window.google.maps) {
-        setGoogleAvailable(true);
-        setMapLoaded(true);
-        clearInterval(interval); // Stop checking once Google Maps is available
-      }
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Function to get marker icon safely
-  const getMarkerIcon = () => {
-    if (googleAvailable) {
-      return {
-        url: "https://maps.google.com/mapfiles/kml/paddle/red-circle.png",
-        scaledSize: new window.google.maps.Size(40, 40), // Only use when Google Maps is ready
-      };
-    }
-    return undefined;
-  };
+  if (loadError) {
+    return (
+      <div className="text-red-500">
+        Error loading Google Maps. Please check your API key, DNS, or network
+        connection.
+      </div>
+    );
+  }
 
   return (
-    <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string}>
+    <APIProvider
+      apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string}
+      onLoad={() => setMapLoaded(true)}
+      onError={() => setLoadError(true)}
+    >
       <div style={{ height: "400px", width: "100%", borderRadius: "8px" }}>
         <Map
           defaultCenter={center}
           defaultZoom={15}
-          mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID}
+          mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID}
         >
-          {mapLoaded && googleAvailable && (
+          {mapLoaded && (
             <Marker
               position={center}
               title="Scooter Location"
-              icon={getMarkerIcon()}
+              icon={{
+                path: google.maps.SymbolPath.CIRCLE,
+                scale: 8,
+                fillColor: "#4285F4",
+                fillOpacity: 1,
+                strokeWeight: 2,
+              }}
             />
           )}
         </Map>
