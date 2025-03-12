@@ -1,10 +1,10 @@
-import UserForm from "@/components/UserForm/UserForm";
+import AddNewAdmin from "@/components/AddNewAdmin/AddNewAdmin";
 import React from "react";
 
 const page = () => {
   return (
     <>
-      <UserForm />
+      <AddNewAdmin />
     </>
   );
 };

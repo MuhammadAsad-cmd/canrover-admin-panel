@@ -25,11 +25,10 @@ const UserDetailPage: React.FC = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        // const response = await api.get(`/user/fetch`);
         const response = await api.get(`/api/user/fetch`, { params: { id } });
 
         if (response.data?.data?.length > 0) {
-          setUser(response.data.data[0]); // Extract first user object
+          setUser(response.data.data[0]);
         } else {
           setError("User not found.");
         }

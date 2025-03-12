@@ -1,13 +1,15 @@
 "use client";
-import React, { useEffect, useState } from "react";
+
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import api from "@/utils/api";
 import Pagination from "../Ui/Pagination";
-import ScootiesRows from "./ScootiesRows";
-import MapComponent from "../MapComponent/MapComponent";
 import LoadingSpinner from "../LoadingSpinner/LoadingSpinner";
+import MapComponent from "../MapComponent/MapComponent";
+import ScootiesRows from "./ScootiesRows";
+import ScooterDetailModal from "./ScooterDetailModal";
 
-interface ScooterData {
+export interface ScooterData {
   _id: string;
   imei: string;
   code: string;
@@ -23,8 +25,8 @@ interface ScooterData {
 }
 
 const ScooterTable: React.FC = () => {
-  const scootersPerPage = 15;
   const { imei } = useParams() as { imei: string };
+  const scootersPerPage = 15;
 
   const [scooters, setScooters] = useState<ScooterData[]>([]);
   const [scooterDetails, setScooterDetails] = useState<ScooterData | null>(
@@ -34,91 +36,85 @@ const ScooterTable: React.FC = () => {
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showMap, setShowMap] = useState(false);
-
-  useEffect(() => {
-    const fetchHeaderData = async () => {
-      try {
-        const response = await api.get<{ data: any }>("/api/scooter/fetch", {
-          params: { imei },
-        });
-        const headerData = response.data?.data;
-        if (headerData && headerData.length > 0) {
-          const scooter = headerData[0];
-          const formattedScooter: ScooterData = {
-            _id: scooter._id,
-            imei: scooter.imei,
-            code: scooter.code || "N/A",
-            raw: scooter.raw || "N/A",
-            battery: scooter.battery || 0,
-            latitude: scooter.latitude || 0,
-            longitude: scooter.longitude || 0,
-            createdAt: scooter.createdAt,
-            updatedAt: scooter.updatedAt,
-            name: scooter.name || "N/A",
-            model: scooter.model || "N/A",
-            online: scooter.online ? "Online" : "Offline",
-          };
-          setScooterDetails(formattedScooter);
-          console.log(
-            "Map coordinates:",
-            formattedScooter.latitude,
-            formattedScooter.longitude
-          );
-        } else {
-          setError("No header data available.");
-        }
-      } catch (err) {
-        console.error(err);
-        setError("Failed to fetch scooter header details.");
-      }
-    };
-
-    const fetchTableData = async () => {
-      try {
-        const response = await api.get<{ data: ScooterData[] }>(
-          "/api/scooter/data",
-          { params: { imei } }
-        );
-        setScooters(response.data.data);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to fetch scooter table details.");
-      }
-    };
-
-    Promise.all([fetchHeaderData(), fetchTableData()]).finally(() =>
-      setLoading(false)
-    );
-  }, [imei]);
-
-  // Calculate pagination data
-  const totalPages = Math.ceil(scooters.length / scootersPerPage);
-  const displayedScooters = scooters.slice(
-    (currentPage - 1) * scootersPerPage,
-    currentPage * scootersPerPage
+  const [selectedScooter, setSelectedScooter] = useState<ScooterData | null>(
+    null
   );
 
-  const handleViewLocation = () => {
-    if (
-      scooterDetails &&
-      scooterDetails.latitude !== 0 &&
-      scooterDetails.longitude !== 0
-    ) {
+  const fetchData = useCallback(async () => {
+    try {
+      if (!imei) {
+        setError("Invalid IMEI parameter.");
+        return;
+      }
+
+      // Fetch both header and table data concurrently
+      const [headerResponse, tableResponse] = await Promise.all([
+        api.get("/api/scooter/fetch", { params: { imei } }),
+        api.get<{ data: ScooterData[] }>("/api/scooter/data", {
+          params: { imei },
+        }),
+      ]);
+
+      const headerData = headerResponse.data?.data;
+      if (headerData && headerData.length > 0) {
+        const scooter = headerData[0];
+        const formattedScooter: ScooterData = {
+          _id: scooter._id,
+          imei: scooter.imei,
+          code: scooter.code || "N/A",
+          raw: scooter.raw || "N/A",
+          battery: scooter.battery || 0,
+          latitude: scooter.latitude || 0,
+          longitude: scooter.longitude || 0,
+          createdAt: scooter.createdAt,
+          updatedAt: scooter.updatedAt,
+          name: scooter.name || "N/A",
+          model: scooter.model || "N/A",
+          online: scooter.online ? "Online" : "Offline",
+        };
+        setScooterDetails(formattedScooter);
+      } else {
+        setError("No header data available.");
+      }
+
+      setScooters(tableResponse.data.data);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError("Failed to fetch scooter details.");
+    } finally {
+      setLoading(false);
+    }
+  }, [imei]);
+
+  useEffect(() => {
+    fetchData();
+  }, [imei, fetchData]);
+
+  // Memoize total pages and displayed scooters for performance
+  const totalPages = useMemo(
+    () => Math.ceil(scooters.length / scootersPerPage),
+    [scooters.length]
+  );
+  const displayedScooters = useMemo(() => {
+    const start = (currentPage - 1) * scootersPerPage;
+    return scooters.slice(start, start + scootersPerPage);
+  }, [currentPage, scooters, scootersPerPage]);
+
+  const handleViewLocation = useCallback(() => {
+    if (scooterDetails && scooterDetails.latitude && scooterDetails.longitude) {
       setShowMap(true);
     }
-  };
+  }, [scooterDetails]);
 
-  if (loading) {
-    return <LoadingSpinner message="Loading scooter details..." />;
-  }
+  const handleViewDetails = useCallback((scooter: ScooterData) => {
+    setSelectedScooter(scooter);
+  }, []);
 
-  if (error) {
+  if (loading) return <LoadingSpinner message="Loading scooter details..." />;
+  if (error)
     return <div className="text-center py-8 text-red-500">{error}</div>;
-  }
-
-  if (scooters.length === 0) {
+  if (!scooters.length)
     return <div className="text-center py-8">No data found.</div>;
-  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -166,8 +162,8 @@ const ScooterTable: React.FC = () => {
           className="mt-4 bg-primary cursor-pointer hover:bg-primary-hover text-white font-medium py-2 px-4 rounded-lg"
           disabled={
             !scooterDetails ||
-            scooterDetails.latitude === 0 ||
-            scooterDetails.longitude === 0
+            !scooterDetails.latitude ||
+            !scooterDetails.longitude
           }
         >
           View Location on Map
@@ -202,11 +198,16 @@ const ScooterTable: React.FC = () => {
               <th className="px-4 py-2">Longitude</th>
               <th className="px-4 py-2">Latitude</th>
               <th className="px-4 py-2">Created At</th>
+              <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
             {displayedScooters.map((scooter) => (
-              <ScootiesRows key={scooter._id} data={scooter} />
+              <ScootiesRows
+                key={scooter._id}
+                data={scooter}
+                onView={handleViewDetails}
+              />
             ))}
           </tbody>
         </table>
@@ -218,6 +219,15 @@ const ScooterTable: React.FC = () => {
         totalPages={totalPages}
         onPageChange={setCurrentPage}
       />
+
+      {/* Modal for Scooter Details */}
+      {selectedScooter && (
+        <ScooterDetailModal
+          scooter={selectedScooter}
+          headerDetails={scooterDetails}
+          onClose={() => setSelectedScooter(null)}
+        />
+      )}
     </div>
   );
 };

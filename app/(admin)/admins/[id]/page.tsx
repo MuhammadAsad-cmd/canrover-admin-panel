@@ -2,8 +2,7 @@
 import LoadingSpinner from "@/components/LoadingSpinner/LoadingSpinner";
 import api from "@/utils/api";
 import { useParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
-import { MdEmail } from "react-icons/md";
+import React, { useEffect, useState, useCallback } from "react";
 
 interface Admin {
   id: string;
@@ -12,35 +11,32 @@ interface Admin {
 }
 
 const AdminDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>(); // Ensure id is typed
+  const { id } = useParams(); // No need for generic type
   const [admin, setAdmin] = useState<Admin | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchAdmin = async () => {
-      try {
-        const response = await api.get(`/api/admin/fetch`, { params: { id } });
+  const fetchAdmin = useCallback(async () => {
+    try {
+      const response = await api.get(`/api/admin/fetch`, { params: { id } });
+      const adminData = response.data?.data?.[0];
 
-        if (response.data?.data?.length > 0) {
-          setAdmin(response.data.data[0]); // Extract the first admin object
-        } else {
-          setError("Admin not found.");
-        }
-      } catch (err) {
-        setError("Failed to fetch user details.");
-      } finally {
-        setLoading(false);
+      if (adminData) {
+        setAdmin(adminData);
+      } else {
+        setAdmin(null);
       }
-    };
-
-    if (id) {
-      fetchAdmin();
+    } catch (err) {
+      setAdmin(null); // No need for separate error state
+    } finally {
+      setLoading(false);
     }
   }, [id]);
 
-  if (loading) return <LoadingSpinner message="Loading admin detail..." />;
-  if (error) return <p className="text-red-500">{error}</p>;
+  useEffect(() => {
+    if (id) fetchAdmin();
+  }, [id, fetchAdmin]);
+
+  if (loading) return <LoadingSpinner message="Loading admin details..." />;
   if (!admin)
     return (
       <div className="flex items-center justify-center h-screen text-center text-red-500">
@@ -53,22 +49,15 @@ const AdminDetailPage: React.FC = () => {
       <div className="overflow-hidden bg-base-bg border border-border-default rounded-lg shadow-sm">
         <div className="pt-20 px-6 pb-6">
           <div className="flex justify-between items-start mb-4">
-            <div>
-              <h1 className="text-2xl font-semibold text-heading mb-1">
-                {admin.name}
-              </h1>
-            </div>
+            <h1 className="text-2xl font-semibold text-heading">
+              {admin.name}
+            </h1>
             <span className="inline-flex px-3 py-1 rounded-full text-sm font-medium bg-success text-white">
               Online
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-            <div className="space-y-4">
-              {admin?.email}
-              {/* <InfoRow icon={<MdEmail />} label="Email" value={admin.email} /> */}
-            </div>
-          </div>
+          <p className="mt-4 text-lg text-gray-600">{admin.email}</p>
         </div>
       </div>
     </div>
