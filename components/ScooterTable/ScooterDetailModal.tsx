@@ -1,6 +1,5 @@
 "use client";
 import React from "react";
-import { ScooterData } from "./ScooterTable";
 import {
   MdClose,
   MdLocationOn,
@@ -12,6 +11,7 @@ import {
   MdPhoneIphone,
 } from "react-icons/md";
 import { BsScooter } from "react-icons/bs";
+import { ScooterData } from "@/types/types";
 
 interface ScooterDetailModalProps {
   scooter: ScooterData;
@@ -107,9 +107,9 @@ const ScooterDetailModal: React.FC<ScooterDetailModalProps> = ({
                     : "N/A"
                 }
               />
-              <div className="bg-gray-100 rounded-lg h-32 flex items-center justify-center">
+              {/* <div className="bg-gray-100 rounded-lg h-32 flex items-center justify-center">
                 <p className="text-sm text-gray-500">Map Preview (Static)</p>
-              </div>
+              </div> */}
             </div>
 
             {/* Status Section */}
@@ -160,13 +160,13 @@ const ScooterDetailModal: React.FC<ScooterDetailModalProps> = ({
   );
 };
 
-const DetailItem: React.FC<{ label: string; value: string | number }> = ({
+const DetailItem: React.FC<{ label: string; value: React.ReactNode }> = ({
   label,
   value,
 }) => (
-  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-    <span className="text-gray-500">{label}:</span>
-    <span className="font-medium text-gray-800">{value}</span>
+  <div className="flex justify-between gap-4 items-center py-2 border-b border-gray-100">
+    <span className="text-gray-500 whitespace-nowrap">{label}:</span>
+    <span className="font-medium text-gray-800 break-all">{value}</span>
   </div>
 );
 

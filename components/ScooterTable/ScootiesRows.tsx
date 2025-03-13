@@ -1,6 +1,6 @@
 "use client";
+import { ScooterData } from "@/types/types";
 import React from "react";
-import { ScooterData } from "./ScooterTable";
 
 interface ScootiesRowsProps {
   data: ScooterData;

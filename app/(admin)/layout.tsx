@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import MainLayout from "@/components/Layouts/MainLayout";
 
 export const metadata: Metadata = {

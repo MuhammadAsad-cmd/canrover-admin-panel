@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import api from "@/utils/api";
@@ -8,26 +7,12 @@ import LoadingSpinner from "../LoadingSpinner/LoadingSpinner";
 import MapComponent from "../MapComponent/MapComponent";
 import ScootiesRows from "./ScootiesRows";
 import ScooterDetailModal from "./ScooterDetailModal";
-
-export interface ScooterData {
-  _id: string;
-  imei: string;
-  code: string;
-  raw: string;
-  battery: number;
-  latitude: number;
-  longitude: number;
-  createdAt: string;
-  updatedAt: string;
-  name?: string;
-  model?: string;
-  online?: "Online" | "Offline";
-}
+import ScooterHeader from "./ScooterHeader";
+import { ScooterData } from "@/types/types";
 
 const ScooterTable: React.FC = () => {
   const { imei } = useParams() as { imei: string };
   const scootersPerPage = 15;
-
   const [scooters, setScooters] = useState<ScooterData[]>([]);
   const [scooterDetails, setScooterDetails] = useState<ScooterData | null>(
     null
@@ -39,6 +24,8 @@ const ScooterTable: React.FC = () => {
   const [selectedScooter, setSelectedScooter] = useState<ScooterData | null>(
     null
   );
+  const [actionLoading, setActionLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const fetchData = useCallback(async () => {
     try {
@@ -54,6 +41,8 @@ const ScooterTable: React.FC = () => {
           params: { imei },
         }),
       ]);
+
+      console.log("API Response /scooter/fetch:", headerResponse.data);
 
       const headerData = headerResponse.data?.data;
       if (headerData && headerData.length > 0) {
@@ -95,16 +84,31 @@ const ScooterTable: React.FC = () => {
     () => Math.ceil(scooters.length / scootersPerPage),
     [scooters.length]
   );
+
+  // API call to perform lock, unlock, and alarm actions
+  const handleAction = async (action: "lock" | "unlock" | "alarm") => {
+    if (!scooterDetails) return;
+
+    try {
+      setActionLoading(true);
+      await api.post("/api/scooter/settings", {
+        imei: scooterDetails.imei,
+        action,
+      });
+      setSuccessMessage(`Scooter ${action}ed successfully!`);
+      setTimeout(() => setSuccessMessage(""), 3000); // Clear message after 3 seconds
+      await fetchData(); // Refresh the data after action
+    } catch (err) {
+      console.error(`Error performing ${action}:`, err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const displayedScooters = useMemo(() => {
     const start = (currentPage - 1) * scootersPerPage;
     return scooters.slice(start, start + scootersPerPage);
   }, [currentPage, scooters, scootersPerPage]);
-
-  const handleViewLocation = useCallback(() => {
-    if (scooterDetails && scooterDetails.latitude && scooterDetails.longitude) {
-      setShowMap(true);
-    }
-  }, [scooterDetails]);
 
   const handleViewDetails = useCallback((scooter: ScooterData) => {
     setSelectedScooter(scooter);
@@ -116,59 +120,17 @@ const ScooterTable: React.FC = () => {
   if (!scooters.length)
     return <div className="text-center py-8">No data found.</div>;
 
+  // Success message UI
+
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header Section */}
-      <section className="bg-base-bg rounded-lg shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-semibold mb-4 text-heading">
-          Scooter Details for IMEI: {imei}
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          <div>
-            <p className="text-sm text-gray-600">Name</p>
-            <p className="font-medium text-heading">{scooterDetails?.name}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Model</p>
-            <p className="font-medium text-heading">{scooterDetails?.model}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Status</p>
-            <p
-              className={`font-medium ${
-                scooterDetails?.online === "Online"
-                  ? "text-success"
-                  : "text-paragraph"
-              }`}
-            >
-              {scooterDetails?.online}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600">Location</p>
-            <p className="font-medium text-heading">
-              {scooterDetails &&
-              scooterDetails.latitude &&
-              scooterDetails.longitude
-                ? `${scooterDetails.latitude.toFixed(
-                    4
-                  )}, ${scooterDetails.longitude.toFixed(4)}`
-                : "N/A"}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={handleViewLocation}
-          className="mt-4 bg-primary cursor-pointer hover:bg-primary-hover text-white font-medium py-2 px-4 rounded-lg"
-          disabled={
-            !scooterDetails ||
-            !scooterDetails.latitude ||
-            !scooterDetails.longitude
-          }
-        >
-          View Location on Map
-        </button>
-      </section>
+      <ScooterHeader
+        scooterDetails={scooterDetails}
+        onAction={handleAction}
+        actionLoading={actionLoading}
+        successMessage={successMessage}
+        onViewLocation={() => setShowMap(true)}
+      />
 
       {/* Map Section */}
       {showMap && scooterDetails && (
