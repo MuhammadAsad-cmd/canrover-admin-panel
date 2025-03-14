@@ -18,7 +18,6 @@ interface ScooterHeaderProps {
 const ScooterHeader: React.FC<ScooterHeaderProps> = ({
   scooterDetails,
   onAction,
-  actionLoading,
   buttonLoading,
   successMessage,
   lastAction,
@@ -115,9 +114,7 @@ const ScooterHeader: React.FC<ScooterHeaderProps> = ({
                     : "bg-green-100 text-green-600"
                 }`}
               >
-                {scooterDetails?.[key as keyof ScooterData]
-                  ? "Locked"
-                  : "Unlocked"}
+                {scooterDetails?.helmetLock ? "Locked" : "Unlocked"}
               </span>
             </div>
           ))}

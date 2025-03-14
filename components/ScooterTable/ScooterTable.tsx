@@ -49,20 +49,15 @@ const ScooterTable: React.FC = () => {
           return;
         }
 
-        // For initial load when there's no header data and no headerSkeleton flag,
-        // show full-page loading spinner.
         if (currentPage === 1 && !scooterDetails && !options?.headerSkeleton) {
           setLoading(true);
         } else {
-          // For refresh or action buttons, if headerSkeleton is true then show header skeleton
           if (options?.headerSkeleton) {
             setRefreshing(true);
           }
-          // For both actions and pagination, show table skeleton
           setTableLoading(true);
         }
 
-        // Fetch header and table data concurrently
         const [headerResponse, tableResponse] = await Promise.all([
           api.get("/api/scooter/fetch", { params: { imei } }),
           api.get<{
@@ -91,6 +86,9 @@ const ScooterTable: React.FC = () => {
               name: scooter.name || "N/A",
               model: scooter.model || "N/A",
               online: scooter.online ? "Online" : "Offline",
+              helmetLock: scooter.helmetLock,
+              cableLock: scooter.cableLock,
+              batteryLock: scooter.batteryLock,
             };
             setScooterDetails(formattedScooter);
           } else {
