@@ -41,81 +41,69 @@ const ScooterTable: React.FC = () => {
     "lock" | "unlock" | "alarm" | null
   >(null);
 
-  const fetchData = useCallback(
-    async (options?: { headerSkeleton?: boolean }) => {
-      try {
-        if (!imei) {
-          setError("Invalid IMEI parameter.");
-          return;
+  const fetchData = async (options?: { headerSkeleton?: boolean }) => {
+    try {
+      if (currentPage === 1 && !scooterDetails && !options?.headerSkeleton) {
+        setLoading(true);
+      } else {
+        if (options?.headerSkeleton) {
+          setRefreshing(true);
         }
+        setTableLoading(true);
+      }
 
-        if (currentPage === 1 && !scooterDetails && !options?.headerSkeleton) {
-          setLoading(true);
+      const [headerResponse, tableResponse] = await Promise.all([
+        api.get("/api/scooter/fetch", { params: { imei } }),
+        api.get<{
+          data: ScooterData[];
+          pagination: { totalPages: number; currentPage: number };
+        }>("/api/scooter/data", {
+          params: { imei, page: currentPage, limit: 15 },
+        }),
+      ]);
+
+      // Process header data (only on initial load)
+      if (headerResponse.status === 200) {
+        const headerData = headerResponse.data?.data;
+        if (headerData && headerData.length > 0) {
+          const scooter = headerData[0];
+          const formattedScooter: ScooterData = {
+            _id: scooter._id,
+            imei: scooter.imei,
+            code: scooter.code || "N/A",
+            raw: scooter.raw || "N/A",
+            battery: scooter.battery || 0,
+            latitude: scooter.latitude || 0,
+            longitude: scooter.longitude || 0,
+            createdAt: scooter.createdAt,
+            updatedAt: scooter.updatedAt,
+            name: scooter.name || "N/A",
+            model: scooter.model || "N/A",
+            online: scooter.online ? "Online" : "Offline",
+            helmetLock: scooter.helmetLock,
+            cableLock: scooter.cableLock,
+            batteryLock: scooter.batteryLock,
+          };
+          console.log(formattedScooter);
+          setScooterDetails(formattedScooter);
         } else {
-          if (options?.headerSkeleton) {
-            setRefreshing(true);
-          }
-          setTableLoading(true);
+          setError("No header data available.");
         }
-
-        const [headerResponse, tableResponse] = await Promise.all([
-          api.get("/api/scooter/fetch", { params: { imei } }),
-          api.get<{
-            data: ScooterData[];
-            pagination: { totalPages: number; currentPage: number };
-          }>("/api/scooter/data", {
-            params: { imei, page: currentPage, limit: 15 },
-          }),
-        ]);
-
-        // Process header data (only on initial load)
-        if (!scooterDetails) {
-          const headerData = headerResponse.data?.data;
-          if (headerData && headerData.length > 0) {
-            const scooter = headerData[0];
-            const formattedScooter: ScooterData = {
-              _id: scooter._id,
-              imei: scooter.imei,
-              code: scooter.code || "N/A",
-              raw: scooter.raw || "N/A",
-              battery: scooter.battery || 0,
-              latitude: scooter.latitude || 0,
-              longitude: scooter.longitude || 0,
-              createdAt: scooter.createdAt,
-              updatedAt: scooter.updatedAt,
-              name: scooter.name || "N/A",
-              model: scooter.model || "N/A",
-              online: scooter.online ? "Online" : "Offline",
-              helmetLock: scooter.helmetLock,
-              cableLock: scooter.cableLock,
-              batteryLock: scooter.batteryLock,
-            };
-            setScooterDetails(formattedScooter);
-          } else {
-            setError("No header data available.");
-          }
-        }
-
-        // Process paginated table data
         setScooters(tableResponse.data.data);
         setTotalPages(tableResponse.data.pagination.totalPages);
-      } catch (err) {
-        console.error("Error fetching data:", err);
-        setError("Failed to fetch scooter details.");
-      } finally {
-        // Reset all loading states after fetch
-        setLoading(false);
-        setTableLoading(false);
-        setRefreshing(false);
       }
-    },
-    [imei, currentPage, scooterDetails]
-  );
+    } catch (err) {
+      setError("Failed to fetch scooter details.");
+    } finally {
+      setLoading(false);
+      setTableLoading(false);
+      setRefreshing(false);
+    }
+  };
 
-  // Single effect to fetch data on initial load and whenever imei or currentPage changes
   useEffect(() => {
     fetchData();
-  }, [imei, currentPage, fetchData]);
+  }, [imei]);
 
   // API call to perform lock, unlock, and alarm actions
   const handleAction = async (action: "lock" | "unlock" | "alarm") => {
@@ -144,10 +132,6 @@ const ScooterTable: React.FC = () => {
     setSelectedScooter(scooter);
   };
 
-  const handleRefresh = async () => {
-    await fetchData({ headerSkeleton: true });
-  };
-
   // Show the full-page spinner only when there's no header data yet
   if (loading && !scooterDetails) {
     return <LoadingSpinner message="Loading scooter details..." />;
@@ -168,7 +152,7 @@ const ScooterTable: React.FC = () => {
           actionLoading={actionLoading}
           successMessage={successMessage}
           onViewLocation={() => setShowMap(true)}
-          handleRefresh={handleRefresh}
+          handleRefresh={() => fetchData({ headerSkeleton: true })}
           refreshing={refreshing}
           buttonLoading={buttonLoading}
           lastAction={lastAction}

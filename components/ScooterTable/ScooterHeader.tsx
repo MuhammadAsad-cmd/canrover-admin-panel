@@ -114,7 +114,9 @@ const ScooterHeader: React.FC<ScooterHeaderProps> = ({
                     : "bg-green-100 text-green-600"
                 }`}
               >
-                {scooterDetails?.helmetLock ? "Locked" : "Unlocked"}
+                {scooterDetails?.[key as keyof ScooterData]
+                  ? "Locked"
+                  : "Unlocked"}
               </span>
             </div>
           ))}
@@ -150,7 +152,7 @@ const ScooterHeader: React.FC<ScooterHeaderProps> = ({
           ))}
 
           <button
-            onClick={handleRefresh}
+            onClick={() => handleRefresh()}
             disabled={refreshing}
             className="w-full py-2 px-3 bg-blue-500 text-white rounded-lg flex items-center justify-center"
           >
