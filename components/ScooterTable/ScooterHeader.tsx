@@ -1,50 +1,61 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ScooterData } from "@/types/types";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 interface ScooterHeaderProps {
   scooterDetails: ScooterData | null;
   onAction: (action: "lock" | "unlock" | "alarm") => void;
   actionLoading: boolean;
+  buttonLoading: "lock" | "unlock" | "alarm" | null;
   successMessage: string;
+  lastAction?: "lock" | "unlock" | "alarm" | null;
   onViewLocation: () => void;
+  handleRefresh: () => void;
+  refreshing: boolean;
 }
 
 const ScooterHeader: React.FC<ScooterHeaderProps> = ({
   scooterDetails,
   onAction,
   actionLoading,
+  buttonLoading,
   successMessage,
+  lastAction,
   onViewLocation,
+  handleRefresh,
+  refreshing,
 }) => {
-  const [showSuccess, setShowSuccess] = useState(false);
-
-  // Show success message smoothly and hide after 3 seconds
   useEffect(() => {
     if (successMessage) {
-      setShowSuccess(true);
-      const timer = setTimeout(() => setShowSuccess(false), 3000);
-      return () => clearTimeout(timer);
+      // Determine background color based on lastAction:
+      const toastBgColor =
+        lastAction === "lock"
+          ? "#22c55e" // Tailwind bg-green-500 (approx)
+          : lastAction === "unlock"
+          ? "#facc15" // Tailwind bg-yellow-500 (approx)
+          : lastAction === "alarm"
+          ? "#ef4444" // Tailwind bg-red-500 (approx)
+          : "#22c55e";
+
+      toast.success(successMessage, {
+        position: "top-center",
+        autoClose: 4000,
+        closeOnClick: true,
+        pauseOnHover: true,
+        hideProgressBar: false,
+        draggable: true,
+        style: { background: "#99CA3C", color: "white" },
+      });
     }
-  }, [successMessage]);
+  }, [successMessage, lastAction]);
 
   if (!scooterDetails) return <div>No scooter details available.</div>;
 
   return (
     <section className="bg-base-bg rounded-lg shadow-lg p-6 mb-6 relative">
-      {/* Success Message with Smooth Slide Down and Hide Effect */}
-      {showSuccess && (
-        <div
-          className={`fixed left-1/2 top-0 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-md shadow-md 
-      transition-all duration-500 ease-in-out ${
-        showSuccess
-          ? "translate-y-[78px] opacity-100"
-          : "translate-y-0 opacity-0"
-      }`}
-        >
-          {successMessage}
-        </div>
-      )}
-
+      {/* Include ToastContainer (can be placed globally as well) */}
+      <ToastContainer />
       <h2 className="text-2xl font-semibold mb-4 text-heading">
         Scooter Details for IMEI: {scooterDetails.imei}
       </h2>
@@ -109,38 +120,45 @@ const ScooterHeader: React.FC<ScooterHeaderProps> = ({
         </div>
 
         {/* Third Row - Action Buttons */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <button
             onClick={onViewLocation}
-            className="bg-primary cursor-pointer hover:bg-primary-hover text-white font-medium py-2 px-4 rounded-lg"
+            className="bg-primary cursor-pointer hover:bg-primary-hover text-white font-medium py-2 px-2 rounded-lg"
             disabled={!scooterDetails.latitude || !scooterDetails.longitude}
           >
             View Location on Map
           </button>
+          {["lock", "unlock", "alarm"].map((action) => (
+            <button
+              key={action}
+              onClick={() => onAction(action as "lock" | "unlock" | "alarm")}
+              className={`w-full py-2 px-3 ${
+                action === "lock"
+                  ? "bg-green-500"
+                  : action === "unlock"
+                  ? "bg-yellow-500"
+                  : "bg-red-500"
+              } text-white rounded-lg flex items-center justify-center`}
+            >
+              {buttonLoading === action ? (
+                <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
+              ) : (
+                action.charAt(0).toUpperCase() + action.slice(1)
+              )}
+            </button>
+          ))}
+
           <button
-            disabled={actionLoading}
-            onClick={() => onAction("lock")}
-            className="w-full py-2 px-4 bg-green-500 text-white rounded-lg"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="w-full py-2 px-3 bg-blue-500 text-white rounded-lg flex items-center justify-center"
           >
-            Lock
+            {refreshing ? (
+              <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
+            ) : (
+              "Refresh"
+            )}
           </button>
-          <button
-            disabled={actionLoading}
-            onClick={() => onAction("unlock")}
-            className="w-full py-2 px-4 bg-yellow-500 text-white rounded-lg"
-          >
-            Unlock
-          </button>
-          <button
-            disabled={actionLoading}
-            onClick={() => onAction("alarm")}
-            className="w-full py-2 px-4 bg-red-500 text-white rounded-lg"
-          >
-            Alarm
-          </button>
-          {/* <button className="w-full py-2 px-4 bg-red-500 text-white rounded-lg">
-            Refresh
-          </button> */}
         </div>
       </div>
     </section>

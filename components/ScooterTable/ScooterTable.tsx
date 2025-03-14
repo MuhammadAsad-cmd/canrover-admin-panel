@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import api from "@/utils/api";
 import Pagination from "../Ui/Pagination";
@@ -9,6 +9,8 @@ import ScootiesRows from "./ScootiesRows";
 import ScooterDetailModal from "./ScooterDetailModal";
 import ScooterHeader from "./ScooterHeader";
 import { ScooterData } from "@/types/types";
+import ScooterHeaderSkeleton from "../Ui/Skeltons/ScooterHeaderSkeleton";
+import ScooterTableSkeleton from "../Ui/Skeltons/ScooterTableSkeleton";
 
 const ScooterTable: React.FC = () => {
   const { imei } = useParams() as { imei: string };
@@ -17,6 +19,8 @@ const ScooterTable: React.FC = () => {
   const [scooterDetails, setScooterDetails] = useState<ScooterData | null>(
     null
   );
+  const [totalPages, setTotalPages] = useState(1);
+  // "loading" now only represents a full-page load (initial load)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -26,111 +30,152 @@ const ScooterTable: React.FC = () => {
   );
   const [actionLoading, setActionLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  // "refreshing" for header skeleton on refresh action
+  const [refreshing, setRefreshing] = useState(false);
+  // "tableLoading" for table skeleton on pagination or refresh
+  const [tableLoading, setTableLoading] = useState(false);
+  const [buttonLoading, setButtonLoading] = useState<
+    "lock" | "unlock" | "alarm" | null
+  >(null);
+  const [lastAction, setLastAction] = useState<
+    "lock" | "unlock" | "alarm" | null
+  >(null);
 
-  const fetchData = useCallback(async () => {
-    try {
-      if (!imei) {
-        setError("Invalid IMEI parameter.");
-        return;
+  const fetchData = useCallback(
+    async (options?: { headerSkeleton?: boolean }) => {
+      try {
+        if (!imei) {
+          setError("Invalid IMEI parameter.");
+          return;
+        }
+
+        // For initial load when there's no header data and no headerSkeleton flag,
+        // show full-page loading spinner.
+        if (currentPage === 1 && !scooterDetails && !options?.headerSkeleton) {
+          setLoading(true);
+        } else {
+          // For refresh or action buttons, if headerSkeleton is true then show header skeleton
+          if (options?.headerSkeleton) {
+            setRefreshing(true);
+          }
+          // For both actions and pagination, show table skeleton
+          setTableLoading(true);
+        }
+
+        // Fetch header and table data concurrently
+        const [headerResponse, tableResponse] = await Promise.all([
+          api.get("/api/scooter/fetch", { params: { imei } }),
+          api.get<{
+            data: ScooterData[];
+            pagination: { totalPages: number; currentPage: number };
+          }>("/api/scooter/data", {
+            params: { imei, page: currentPage, limit: 15 },
+          }),
+        ]);
+
+        // Process header data (only on initial load)
+        if (!scooterDetails) {
+          const headerData = headerResponse.data?.data;
+          if (headerData && headerData.length > 0) {
+            const scooter = headerData[0];
+            const formattedScooter: ScooterData = {
+              _id: scooter._id,
+              imei: scooter.imei,
+              code: scooter.code || "N/A",
+              raw: scooter.raw || "N/A",
+              battery: scooter.battery || 0,
+              latitude: scooter.latitude || 0,
+              longitude: scooter.longitude || 0,
+              createdAt: scooter.createdAt,
+              updatedAt: scooter.updatedAt,
+              name: scooter.name || "N/A",
+              model: scooter.model || "N/A",
+              online: scooter.online ? "Online" : "Offline",
+            };
+            setScooterDetails(formattedScooter);
+          } else {
+            setError("No header data available.");
+          }
+        }
+
+        // Process paginated table data
+        setScooters(tableResponse.data.data);
+        setTotalPages(tableResponse.data.pagination.totalPages);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError("Failed to fetch scooter details.");
+      } finally {
+        // Reset all loading states after fetch
+        setLoading(false);
+        setTableLoading(false);
+        setRefreshing(false);
       }
+    },
+    [imei, currentPage, scooterDetails]
+  );
 
-      // Fetch both header and table data concurrently
-      const [headerResponse, tableResponse] = await Promise.all([
-        api.get("/api/scooter/fetch", { params: { imei } }),
-        api.get<{ data: ScooterData[] }>("/api/scooter/data", {
-          params: { imei },
-        }),
-      ]);
-
-      console.log("API Response /scooter/fetch:", headerResponse.data);
-
-      const headerData = headerResponse.data?.data;
-      if (headerData && headerData.length > 0) {
-        const scooter = headerData[0];
-        const formattedScooter: ScooterData = {
-          _id: scooter._id,
-          imei: scooter.imei,
-          code: scooter.code || "N/A",
-          raw: scooter.raw || "N/A",
-          battery: scooter.battery || 0,
-          latitude: scooter.latitude || 0,
-          longitude: scooter.longitude || 0,
-          createdAt: scooter.createdAt,
-          updatedAt: scooter.updatedAt,
-          name: scooter.name || "N/A",
-          model: scooter.model || "N/A",
-          online: scooter.online ? "Online" : "Offline",
-        };
-        setScooterDetails(formattedScooter);
-      } else {
-        setError("No header data available.");
-      }
-
-      setScooters(tableResponse.data.data);
-    } catch (err) {
-      console.error("Error fetching data:", err);
-      setError("Failed to fetch scooter details.");
-    } finally {
-      setLoading(false);
-    }
-  }, [imei]);
-
+  // Single effect to fetch data on initial load and whenever imei or currentPage changes
   useEffect(() => {
     fetchData();
-  }, [imei, fetchData]);
-
-  // Memoize total pages and displayed scooters for performance
-  const totalPages = useMemo(
-    () => Math.ceil(scooters.length / scootersPerPage),
-    [scooters.length]
-  );
+  }, [imei, currentPage, fetchData]);
 
   // API call to perform lock, unlock, and alarm actions
   const handleAction = async (action: "lock" | "unlock" | "alarm") => {
     if (!scooterDetails) return;
 
     try {
-      setActionLoading(true);
+      setButtonLoading(action);
+      setLastAction(action);
+      // Call the action API first
       await api.post("/api/scooter/settings", {
         imei: scooterDetails.imei,
         action,
       });
       setSuccessMessage(`Scooter ${action}ed successfully!`);
-      setTimeout(() => setSuccessMessage(""), 3000); // Clear message after 3 seconds
-      await fetchData(); // Refresh the data after action
+      setTimeout(() => setSuccessMessage(""), 3000);
+      // Now refresh the data with header skeleton enabled
+      await fetchData({ headerSkeleton: true });
     } catch (err) {
       console.error(`Error performing ${action}:`, err);
     } finally {
-      setActionLoading(false);
+      setButtonLoading(null);
     }
   };
 
-  const displayedScooters = useMemo(() => {
-    const start = (currentPage - 1) * scootersPerPage;
-    return scooters.slice(start, start + scootersPerPage);
-  }, [currentPage, scooters, scootersPerPage]);
-
-  const handleViewDetails = useCallback((scooter: ScooterData) => {
+  const handleViewDetails = (scooter: ScooterData) => {
     setSelectedScooter(scooter);
-  }, []);
+  };
 
-  if (loading) return <LoadingSpinner message="Loading scooter details..." />;
+  const handleRefresh = async () => {
+    await fetchData({ headerSkeleton: true });
+  };
+
+  // Show the full-page spinner only when there's no header data yet
+  if (loading && !scooterDetails) {
+    return <LoadingSpinner message="Loading scooter details..." />;
+  }
   if (error)
     return <div className="text-center py-8 text-red-500">{error}</div>;
   if (!scooters.length)
     return <div className="text-center py-8">No data found.</div>;
 
-  // Success message UI
-
   return (
     <div className="container mx-auto px-4 py-8">
-      <ScooterHeader
-        scooterDetails={scooterDetails}
-        onAction={handleAction}
-        actionLoading={actionLoading}
-        successMessage={successMessage}
-        onViewLocation={() => setShowMap(true)}
-      />
+      {refreshing ? (
+        <ScooterHeaderSkeleton />
+      ) : (
+        <ScooterHeader
+          scooterDetails={scooterDetails}
+          onAction={handleAction}
+          actionLoading={actionLoading}
+          successMessage={successMessage}
+          onViewLocation={() => setShowMap(true)}
+          handleRefresh={handleRefresh}
+          refreshing={refreshing}
+          buttonLoading={buttonLoading}
+          lastAction={lastAction}
+        />
+      )}
 
       {/* Map Section */}
       {showMap && scooterDetails && (
@@ -150,36 +195,39 @@ const ScooterTable: React.FC = () => {
       )}
 
       {/* Table Section */}
-      <section className="overflow-x-auto">
-        <table className="w-full bg-white shadow-md rounded-lg">
-          <thead className="bg-table-header-bg text-left text-heading">
-            <tr>
-              <th className="px-4 py-2">Code</th>
-              <th className="px-4 py-2">Battery</th>
-              <th className="px-4 py-2">IMEI</th>
-              <th className="px-4 py-2">Longitude</th>
-              <th className="px-4 py-2">Latitude</th>
-              <th className="px-4 py-2">Created At</th>
-              <th className="px-4 py-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {displayedScooters.map((scooter) => (
-              <ScootiesRows
-                key={scooter._id}
-                data={scooter}
-                onView={handleViewDetails}
-              />
-            ))}
-          </tbody>
-        </table>
-      </section>
+      {tableLoading ? (
+        <ScooterTableSkeleton />
+      ) : (
+        <section className="overflow-x-auto">
+          <table className="w-full bg-white shadow-md rounded-lg">
+            <thead className="bg-table-header-bg text-left text-heading">
+              <tr>
+                <th className="px-4 py-2">Code</th>
+                <th className="px-4 py-2">Battery</th>
+                <th className="px-4 py-2">IMEI</th>
+                <th className="px-4 py-2">Longitude</th>
+                <th className="px-4 py-2">Latitude</th>
+                <th className="px-4 py-2">Created At</th>
+                <th className="px-4 py-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {scooters.map((scooter) => (
+                <ScootiesRows
+                  key={scooter._id}
+                  data={scooter}
+                  onView={handleViewDetails}
+                />
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
 
-      {/* Pagination */}
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
-        onPageChange={setCurrentPage}
+        onPageChange={(page) => setCurrentPage(page)}
       />
 
       {/* Modal for Scooter Details */}
