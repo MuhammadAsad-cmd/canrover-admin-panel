@@ -146,11 +146,27 @@ const ScooterDetailModal: React.FC<ScooterDetailModalProps> = ({
               </div>
               <DetailItem
                 label="Created At"
-                value={new Date(scooter.createdAt).toLocaleString()}
+                value={new Date(scooter.createdAt).toLocaleString(undefined, {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                  hour12: true,
+                })}
               />
               <DetailItem
                 label="Last Check-in"
-                value={new Date(scooter.updatedAt).toLocaleTimeString()}
+                value={new Date(scooter.updatedAt).toLocaleString(undefined, {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                  hour12: true,
+                })}
               />
             </div>
           </div>

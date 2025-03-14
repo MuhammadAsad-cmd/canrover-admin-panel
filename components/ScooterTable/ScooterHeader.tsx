@@ -62,7 +62,7 @@ const ScooterHeader: React.FC<ScooterHeaderProps> = ({
 
       <div className="space-y-6">
         {/* First Row - Basic Details */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <div>
             <p className="text-sm text-gray-600">Name</p>
             <p className="font-medium text-heading">{scooterDetails.name}</p>
@@ -70,6 +70,10 @@ const ScooterHeader: React.FC<ScooterHeaderProps> = ({
           <div>
             <p className="text-sm text-gray-600">Model</p>
             <p className="font-medium text-heading">{scooterDetails.model}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">Battery</p>
+            <p className={`font-medium `}> {scooterDetails.battery}%</p>
           </div>
           <div>
             <p className="text-sm text-gray-600">Status</p>
@@ -107,8 +111,8 @@ const ScooterHeader: React.FC<ScooterHeaderProps> = ({
               <span
                 className={`px-2 py-1 text-xs font-medium rounded-full ${
                   scooterDetails?.[key as keyof ScooterData]
-                    ? "bg-green-100 text-green-600"
-                    : "bg-red-100 text-red-600"
+                    ? "bg-red-100 text-red-600"
+                    : "bg-green-100 text-green-600"
                 }`}
               >
                 {scooterDetails?.[key as keyof ScooterData]
