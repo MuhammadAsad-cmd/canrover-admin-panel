@@ -103,7 +103,7 @@ const ScooterTable: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [imei]);
+  }, [imei, currentPage]);
 
   // API call to perform lock, unlock, and alarm actions
   const handleAction = async (action: "lock" | "unlock" | "alarm") => {
