@@ -4,8 +4,8 @@ interface Ride {
   _id: string;
   scooter: string;
   status: string;
-  pick: { lat: number; long: number };
-  drop: { lat: number; long: number };
+  pick?: { lat: number; long: number } | null;
+  drop?: { lat: number; long: number } | null;
   pickAt: string;
   dropAt: string;
 }
@@ -15,8 +15,9 @@ interface UserRidesProps {
 }
 
 const UserRides: React.FC<UserRidesProps> = ({ rides }) => {
-  if (!rides.length)
+  if (!rides.length) {
     return <p className="text-gray-500 mt-8">No ride details available.</p>;
+  }
 
   return (
     <div className="overflow-x-auto relative">
@@ -35,16 +36,16 @@ const UserRides: React.FC<UserRidesProps> = ({ rides }) => {
             <tr key={ride._id} className="border-b hover:bg-gray-50">
               <td className="px-4 py-3">{ride.status}</td>
               <td className="px-4 whitespace-nowrap py-3">
-                {ride.pick.lat}, {ride.pick.long}
+                {ride.pick ? `${ride.pick.lat}, ${ride.pick.long}` : "N/A"}
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
-                {ride.drop.lat}, {ride.drop.long}
+                {ride.drop ? `${ride.drop.lat}, ${ride.drop.long}` : "N/A"}
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
-                {new Date(ride.pickAt).toLocaleString()}
+                {ride.pickAt ? new Date(ride.pickAt).toLocaleString() : "N/A"}
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
-                {new Date(ride.dropAt).toLocaleString()}
+                {ride.dropAt ? new Date(ride.dropAt).toLocaleString() : "N/A"}
               </td>
             </tr>
           ))}

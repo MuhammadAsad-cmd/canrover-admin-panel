@@ -3,9 +3,9 @@ import { FaStar } from "react-icons/fa";
 
 interface Review {
   _id: string;
-  review: string;
-  rating: number;
-  createdAt: string;
+  review?: string | null;
+  rating?: number | null;
+  createdAt?: string | null;
 }
 
 interface UserReviewsProps {
@@ -23,17 +23,30 @@ const UserReviews: React.FC<UserReviewsProps> = ({ reviews }) => {
           key={review._id}
           className="bg-white p-4 rounded-lg shadow-md border"
         >
-          <p className="text-gray-700 font-semibold">"{review.review}"</p>
-          {/* Star Rating */}
+          {/* Review Text Fallback */}
+          <p className="text-gray-700 font-semibold">
+            "{review.review || "No review text provided"}"
+          </p>
+
+          {/* Star Rating Fallback */}
           <div className="flex items-center gap-1 my-2">
-            {[...Array(review.rating)].map((_, index) => (
+            {[
+              ...Array(review.rating && review.rating > 0 ? review.rating : 0),
+            ].map((_, index) => (
               <span key={index} className="text-yellow-500 text-lg">
                 <FaStar />
               </span>
             ))}
+            {(!review.rating || review.rating <= 0) && (
+              <span className="text-gray-400 text-sm">No rating</span>
+            )}
           </div>
+
+          {/* Date Fallback */}
           <p className="text-xs text-gray-400">
-            {new Date(review.createdAt).toLocaleString()}
+            {review.createdAt
+              ? new Date(review.createdAt).toLocaleString()
+              : "Date not available"}
           </p>
         </div>
       ))}
