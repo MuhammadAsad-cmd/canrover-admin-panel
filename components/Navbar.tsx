@@ -14,7 +14,7 @@ const Navbar: React.FC<NavbarProps> = ({ admin }) => {
   const dispatch = useDispatch();
 
   return (
-    <nav className="bg-primary flex items-center justify-between text-white p-4">
+    <nav className="bg-primary sticky top-0 z-[100] flex items-center justify-between text-white p-4">
       <div className="flex items-center gap-4">
         <button onClick={() => dispatch(toggleSidebar())} className="md:hidden">
           <FaBars className="text-2xl" />

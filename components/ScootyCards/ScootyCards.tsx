@@ -71,7 +71,7 @@ export default function ScootyCards() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold mb-6 text-center text-heading">
+        <h2 className="text-2xl font-semibold text-center text-heading">
           Available Scooties
         </h2>
         <Link
@@ -81,7 +81,7 @@ export default function ScootyCards() {
           Add New Scooter
         </Link>
       </div>
-      <div className="grid grid-cols-1 mt-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 mt-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {scooties.map(
           ({
             id,

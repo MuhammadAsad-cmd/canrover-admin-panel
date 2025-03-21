@@ -27,16 +27,6 @@ const ScooterHeader: React.FC<ScooterHeaderProps> = ({
 }) => {
   useEffect(() => {
     if (successMessage) {
-      // Determine background color based on lastAction:
-      const toastBgColor =
-        lastAction === "lock"
-          ? "#22c55e" // Tailwind bg-green-500 (approx)
-          : lastAction === "unlock"
-          ? "#facc15" // Tailwind bg-yellow-500 (approx)
-          : lastAction === "alarm"
-          ? "#ef4444" // Tailwind bg-red-500 (approx)
-          : "#22c55e";
-
       toast.success(successMessage, {
         position: "top-center",
         autoClose: 4000,
@@ -52,7 +42,7 @@ const ScooterHeader: React.FC<ScooterHeaderProps> = ({
   if (!scooterDetails) return <div>No scooter details available.</div>;
 
   return (
-    <section className="bg-base-bg rounded-lg shadow-lg p-6 mb-6 relative">
+    <section className="bg-base-bg rounded-lg shadow-lg p-6 mb-6">
       {/* Include ToastContainer (can be placed globally as well) */}
       <ToastContainer />
       <h2 className="text-2xl font-semibold mb-4 text-heading">
@@ -61,7 +51,7 @@ const ScooterHeader: React.FC<ScooterHeaderProps> = ({
 
       <div className="space-y-6">
         {/* First Row - Basic Details */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <div>
             <p className="text-sm text-gray-600">Name</p>
             <p className="font-medium text-heading">{scooterDetails.name}</p>
@@ -99,7 +89,7 @@ const ScooterHeader: React.FC<ScooterHeaderProps> = ({
         </div>
 
         {/* Second Row - Locks Status */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {[
             { key: "cableLock", label: "Cable Lock" },
             { key: "helmetLock", label: "Helmet Lock" },

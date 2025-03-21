@@ -40,14 +40,16 @@ const Sidebar: React.FC<NavbarProps> = ({ admin }) => {
       {/* Sidebar panel */}
       <div
         className={`
-          bg-sidebar-bg shadow-xl max-md:w-[280px] fixed top-0 md:static h-full z-50 
+          bg-sidebar-bg h-full shadow-xl max-md:w-[280px] fixed top-[72px] md:static z-50 
           transform transition-transform duration-300
           ${isOpen ? "translate-x-0" : "-translate-x-full"} 
           md:translate-x-0
         `}
       >
         <div className="p-4">
-          <h2 className="text-2xl font-bold mb-4">Menu</h2>
+          <h2 className="text-2xl sticky top-0 bg-sidebar-bg z-50 font-bold mb-4">
+            Menu
+          </h2>
 
           <nav className="space-y-2">
             {admin && (

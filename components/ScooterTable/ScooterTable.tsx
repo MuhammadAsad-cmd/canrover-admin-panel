@@ -1,26 +1,34 @@
 "use client";
-import React, { useCallback, useEffect, useState } from "react";
+
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import api from "@/utils/api";
 import Pagination from "../Ui/Pagination";
 import LoadingSpinner from "../LoadingSpinner/LoadingSpinner";
 import MapComponent from "../MapComponent/MapComponent";
-import ScootiesRows from "./ScootiesRows";
 import ScooterDetailModal from "./ScooterDetailModal";
 import ScooterHeader from "./ScooterHeader";
-import { ScooterData } from "@/types/types";
 import ScooterHeaderSkeleton from "../Ui/Skeltons/ScooterHeaderSkeleton";
 import ScooterTableSkeleton from "../Ui/Skeltons/ScooterTableSkeleton";
+import UserRides from "../UsersDetailsPage/UserRides";
+import UserReviews from "../UsersDetailsPage/UserReviews";
+import { ScooterData } from "@/types/types";
+import ScooterTableData from "./ScooterTableData";
+
+const ITEMS_PER_PAGE = 10;
+const SCOOTERS_PER_PAGE = 15;
 
 const ScooterTable: React.FC = () => {
   const { imei } = useParams() as { imei: string };
-  const scootersPerPage = 15;
+
+  // State declarations
   const [scooters, setScooters] = useState<ScooterData[]>([]);
   const [scooterDetails, setScooterDetails] = useState<ScooterData | null>(
     null
   );
   const [totalPages, setTotalPages] = useState(1);
-  // "loading" now only represents a full-page load (initial load)
+  const [rides, setRides] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -30,9 +38,7 @@ const ScooterTable: React.FC = () => {
   );
   const [actionLoading, setActionLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-  // "refreshing" for header skeleton on refresh action
   const [refreshing, setRefreshing] = useState(false);
-  // "tableLoading" for table skeleton on pagination or refresh
   const [tableLoading, setTableLoading] = useState(false);
   const [buttonLoading, setButtonLoading] = useState<
     "lock" | "unlock" | "alarm" | null
@@ -40,6 +46,10 @@ const ScooterTable: React.FC = () => {
   const [lastAction, setLastAction] = useState<
     "lock" | "unlock" | "alarm" | null
   >(null);
+
+  // Pagination states for rides and reviews sections
+  const [ridesPage, setRidesPage] = useState(1);
+  const [reviewsPage, setReviewsPage] = useState(1);
 
   const fetchData = async (options?: { headerSkeleton?: boolean }) => {
     try {
@@ -52,17 +62,17 @@ const ScooterTable: React.FC = () => {
         setTableLoading(true);
       }
 
+      // First, fetch header data and table data concurrently
       const [headerResponse, tableResponse] = await Promise.all([
         api.get("/api/scooter/fetch", { params: { imei } }),
         api.get<{
           data: ScooterData[];
           pagination: { totalPages: number; currentPage: number };
         }>("/api/scooter/data", {
-          params: { imei, page: currentPage, limit: 15 },
+          params: { imei, page: currentPage, limit: SCOOTERS_PER_PAGE },
         }),
       ]);
 
-      // Process header data (only on initial load)
       if (headerResponse.status === 200) {
         const headerData = headerResponse.data?.data;
         if (headerData && headerData.length > 0) {
@@ -84,8 +94,18 @@ const ScooterTable: React.FC = () => {
             cableLock: scooter.cableLock,
             batteryLock: scooter.batteryLock,
           };
-          console.log(formattedScooter);
           setScooterDetails(formattedScooter);
+
+          const sId = formattedScooter._id;
+          // Now fetch rides and reviews concurrently using the scooter ID (sId)
+          const [ridesResponse, reviewsResponse] = await Promise.all([
+            api.get("/api/ride/fetch", { params: { sId } }),
+            api.get("/api/ride/review/fetch", {
+              params: { sId },
+            }),
+          ]);
+          setRides(ridesResponse.data.data || []);
+          setReviews(reviewsResponse.data.data || []);
         } else {
           setError("No header data available.");
         }
@@ -105,21 +125,17 @@ const ScooterTable: React.FC = () => {
     fetchData();
   }, [imei, currentPage]);
 
-  // API call to perform lock, unlock, and alarm actions
   const handleAction = async (action: "lock" | "unlock" | "alarm") => {
     if (!scooterDetails) return;
-
     try {
       setButtonLoading(action);
       setLastAction(action);
-      // Call the action API first
       await api.post("/api/scooter/settings", {
         imei: scooterDetails.imei,
         action,
       });
       setSuccessMessage(`Scooter ${action}ed successfully!`);
       setTimeout(() => setSuccessMessage(""), 3000);
-      // Now refresh the data with header skeleton enabled
       await fetchData({ headerSkeleton: true });
     } catch (err) {
       console.error(`Error performing ${action}:`, err);
@@ -132,14 +148,31 @@ const ScooterTable: React.FC = () => {
     setSelectedScooter(scooter);
   };
 
-  // Show the full-page spinner only when there's no header data yet
+  // Pagination logic for rides
+  const totalRides = rides.length;
+  const totalRidesPages = Math.ceil(totalRides / ITEMS_PER_PAGE);
+  const ridesStartIndex = (ridesPage - 1) * ITEMS_PER_PAGE;
+  const ridesPaginated = rides.slice(
+    ridesStartIndex,
+    ridesStartIndex + ITEMS_PER_PAGE
+  );
+
+  // Pagination logic for reviews
+  const totalReviews = reviews.length;
+  const totalReviewsPages = Math.ceil(totalReviews / ITEMS_PER_PAGE);
+  const reviewsStartIndex = (reviewsPage - 1) * ITEMS_PER_PAGE;
+  const reviewsPaginated = reviews.slice(
+    reviewsStartIndex,
+    reviewsStartIndex + ITEMS_PER_PAGE
+  );
+
+  // Conditional rendering for loading, error, and no-data states
   if (loading && !scooterDetails) {
     return <LoadingSpinner message="Loading scooter details..." />;
   }
-  if (error)
+  if (error) {
     return <div className="text-center py-8 text-red-500">{error}</div>;
-  if (!scooters.length)
-    return <div className="text-center py-8">No data found.</div>;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -176,41 +209,49 @@ const ScooterTable: React.FC = () => {
         </section>
       )}
 
-      {/* Table Section */}
+      {/* Scooter Table Section */}
       {tableLoading ? (
         <ScooterTableSkeleton />
       ) : (
         <section className="overflow-x-auto">
-          <table className="w-full bg-white shadow-md rounded-lg">
-            <thead className="bg-table-header-bg text-left text-heading">
-              <tr>
-                <th className="px-4 py-2">Code</th>
-                <th className="px-4 py-2">Battery</th>
-                <th className="px-4 py-2">IMEI</th>
-                <th className="px-4 py-2">Longitude</th>
-                <th className="px-4 py-2">Latitude</th>
-                <th className="px-4 py-2">Created At</th>
-                <th className="px-4 py-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {scooters.map((scooter) => (
-                <ScootiesRows
-                  key={scooter._id}
-                  data={scooter}
-                  onView={handleViewDetails}
-                />
-              ))}
-            </tbody>
-          </table>
+          <ScooterTableData
+            scooters={scooters}
+            handleViewDetails={handleViewDetails}
+          />
         </section>
       )}
 
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
-        onPageChange={(page) => setCurrentPage(page)}
+        onPageChange={setCurrentPage}
       />
+
+      {/* Scooter Rides Section */}
+      <section className="mt-6">
+        <h2 className="text-xl font-semibold mb-4">Scooter Rides</h2>
+        <UserRides rides={ridesPaginated} />
+        {totalRides > ITEMS_PER_PAGE && (
+          <Pagination
+            currentPage={ridesPage}
+            totalPages={totalRidesPages}
+            onPageChange={setRidesPage}
+          />
+        )}
+      </section>
+
+      {/* Scooter Reviews Section */}
+      <section className="mt-6">
+        <h2 className="text-xl font-semibold mb-4">Scooter Reviews</h2>
+        <UserReviews reviews={reviewsPaginated} />
+        {totalReviews > ITEMS_PER_PAGE && (
+          <Pagination
+            currentPage={reviewsPage}
+            totalPages={totalReviewsPages}
+            onPageChange={setReviewsPage}
+          />
+        )}
+      </section>
 
       {/* Modal for Scooter Details */}
       {selectedScooter && (

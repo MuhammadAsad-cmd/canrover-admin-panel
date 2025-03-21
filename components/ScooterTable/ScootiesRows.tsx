@@ -24,7 +24,7 @@ const ScootiesRows: React.FC<ScootiesRowsProps> = ({ data, onView }) => {
       <td className="px-4 py-3">
         {data.latitude !== undefined ? data.latitude.toFixed(4) : "N/A"}
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 whitespace-nowrap py-3">
         {" "}
         {new Date(data.createdAt).toLocaleString(undefined, {
           year: "numeric",

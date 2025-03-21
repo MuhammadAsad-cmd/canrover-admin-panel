@@ -38,7 +38,7 @@ const ScooterDetailModal: React.FC<ScooterDetailModalProps> = ({
       : "bg-red-500";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-2xl w-11/12 md:w-2/3 lg:w-[65%] max-h-[90vh] overflow-y-auto relative animate-scaleIn">
         <button
           onClick={onClose}

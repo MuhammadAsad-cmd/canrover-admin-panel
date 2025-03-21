@@ -15,7 +15,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [admin, setAdmin] = useState<{ name?: string; email: string } | null>(
     null
   );
-
   const router = useRouter();
 
   useEffect(() => {
@@ -35,11 +34,16 @@ export default function MainLayout({ children }: MainLayoutProps) {
   return (
     <Provider store={store}>
       <Navbar admin={admin} />
-      <div className="flex w-full min-h-screen">
-        <div className="md:w-[320px]">
+      <div className="flex w-full h-[calc(100vh-72px)]">
+        {/* Sidebar */}
+        <div className="md:w-[320px] sticky left-0 top-[72px] h-full overflow-y-auto custom-scrollbar">
           <Sidebar admin={admin} />
         </div>
-        <main className="w-full">{children}</main>
+
+        {/* Main Content */}
+        <main className="w-full px-4 overflow-y-auto custom-scrollbar">
+          {children}
+        </main>
       </div>
     </Provider>
   );

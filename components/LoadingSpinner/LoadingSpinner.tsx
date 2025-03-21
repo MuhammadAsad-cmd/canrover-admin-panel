@@ -7,7 +7,7 @@ interface LoadingSpinnerProps {
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message }) => {
   return (
-    <div className="flex items-center justify-center h-screen">
+    <div className="flex items-center justify-center h-[calc(100vh-72px)]">
       <ClipLoader color="#3498db" size={50} />
       <div style={{ marginLeft: "16px", fontSize: "18px", fontWeight: "bold" }}>
         {message}
