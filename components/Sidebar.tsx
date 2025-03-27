@@ -9,8 +9,9 @@ import { useCookies } from "next-client-cookies";
 import { RxDashboard } from "react-icons/rx";
 import { FaRegUserCircle, FaUsers } from "react-icons/fa";
 import { MdOutlineAdminPanelSettings } from "react-icons/md";
-import { BsScooter } from "react-icons/bs";
+import { BsCalendarCheck, BsScooter, BsStar } from "react-icons/bs";
 import { IoMdLogOut } from "react-icons/io";
+import { GiPathDistance } from "react-icons/gi";
 
 interface NavbarProps {
   admin: { name?: string; email: string } | null;
@@ -27,6 +28,9 @@ const Sidebar: React.FC<NavbarProps> = ({ admin }) => {
     { name: "Users", href: "/users", icon: <FaUsers /> },
     { name: "Admins", href: "/admins", icon: <MdOutlineAdminPanelSettings /> },
     { name: "Scooters", href: "/scooters", icon: <BsScooter /> },
+    { name: "Rides", href: "/rides", icon: <GiPathDistance /> },
+    { name: "Reviews", href: "/reviews", icon: <BsStar /> },
+    { name: "Reservations", href: "/reservations", icon: <BsCalendarCheck /> },
   ];
 
   const handleLogout = () => {

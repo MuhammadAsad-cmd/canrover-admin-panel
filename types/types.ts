@@ -47,3 +47,44 @@ export interface Ride {
   createdAt: string;
   updatedAt: string;
 }
+
+// Example of how your Review type might look
+export interface Review {
+  _id: string;
+  user: {
+    _id: string;
+    email: string;
+    phone: string;
+    name: string;
+    accountType: string;
+    image: string;
+  };
+  scooter: {
+    _id: string;
+    imei: string;
+    model: string;
+    name: string;
+    battery: number;
+    online: boolean;
+    helmetLock: boolean;
+    batteryLock: boolean;
+    cableLock: boolean;
+    latitude: number;
+    longitude: number;
+  };
+  ride: {
+    _id: string;
+    status: string;
+    pick: { lat: string; long: string };
+    drop: { lat: string; long: string };
+    pickAt: string;
+    dropAt: string;
+  };
+  review: string;
+  rating: number;
+  createdAt: string;
+}
+
+export interface ReviewCardProps {
+  review: Review;
+}

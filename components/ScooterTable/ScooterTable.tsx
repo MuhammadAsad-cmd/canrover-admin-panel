@@ -12,8 +12,9 @@ import ScooterHeaderSkeleton from "../Ui/Skeltons/ScooterHeaderSkeleton";
 import ScooterTableSkeleton from "../Ui/Skeltons/ScooterTableSkeleton";
 import UserRides from "../UsersDetailsPage/UserRides";
 import UserReviews from "../UsersDetailsPage/UserReviews";
-import { ScooterData } from "@/types/types";
+import { Review, ScooterData } from "@/types/types";
 import ScooterTableData from "./ScooterTableData";
+import ReviewCard from "../ReviewsPage/ReviewRow";
 
 const ITEMS_PER_PAGE = 10;
 const SCOOTERS_PER_PAGE = 15;
@@ -27,8 +28,8 @@ const ScooterTable: React.FC = () => {
     null
   );
   const [totalPages, setTotalPages] = useState(1);
-  const [rides, setRides] = useState([]);
-  const [reviews, setReviews] = useState([]);
+  const [rides, setRides] = useState<any[]>([]); // Consider creating a Ride type if possible
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -243,7 +244,11 @@ const ScooterTable: React.FC = () => {
       {/* Scooter Reviews Section */}
       <section className="mt-6">
         <h2 className="text-xl font-semibold mb-4">Scooter Reviews</h2>
-        <UserReviews reviews={reviewsPaginated} />
+        <div className="space-y-4">
+          {reviewsPaginated.map((review) => (
+            <ReviewCard key={review._id} review={review} />
+          ))}
+        </div>
         {totalReviews > ITEMS_PER_PAGE && (
           <Pagination
             currentPage={reviewsPage}

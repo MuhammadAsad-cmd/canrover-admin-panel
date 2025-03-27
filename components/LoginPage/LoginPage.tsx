@@ -108,7 +108,7 @@ const LoginPage: React.FC = () => {
               height={80}
               src="/images/logo.png"
               alt="Logo"
-              className="h-full w-full mx-auto transform transition-transform hover:scale-105"
+              className="h-full w-full mx-auto"
             />
           </div>
           <div className="text-center mb-8">
